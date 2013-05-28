@@ -1,0 +1,4 @@
+[riak_cluster]
+192.168.2.50 node_type=primary
+192.168.2.51 node_type=middle
+192.168.2.52 node_type=last
