@@ -1,0 +1,22 @@
+[DEFAULT]
+bind_host = 0.0.0.0
+bind_port = 9191
+log_file = /var/log/glance/registry.log
+backlog = 4096
+sql_connection = mysql://glance:{{ glance_db_pass }}@localhost/glance
+sql_idle_timeout = 3600
+api_limit_max = 1000
+limit_param_default = 25
+
+[keystone_authtoken]
+auth_host = 127.0.0.1
+auth_port = 35357
+auth_protocol = http
+admin_tenant_name = admin
+admin_user = admin
+admin_password = {{ admin_pass }}
+
+[paste_deploy]
+config_file = /etc/glance/glance-registry-paste.ini
+flavor=keystone
+

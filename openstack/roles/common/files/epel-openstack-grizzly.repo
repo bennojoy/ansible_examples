@@ -1,0 +1,9 @@
+# Place this file in your /etc/yum.repos.d/ directory
+
+[epel-openstack-grizzly]
+name=OpenStack Folsom Repository for EPEL 6
+baseurl=http://repos.fedorapeople.org/repos/openstack/openstack-grizzly/epel-6
+enabled=1
+skip_if_unavailable=1
+gpgcheck=0
+priority=98

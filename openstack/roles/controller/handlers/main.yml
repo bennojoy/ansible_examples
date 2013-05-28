@@ -1,0 +1,50 @@
+---
+# Handlers for the controller plays
+
+- name: restart keystone
+  service: name=openstack-keystone state=restarted
+
+- name: restart glance
+  service: name={{ item }} state=restarted
+  with_items:
+   - openstack-glance-api
+   - openstack-glance-registry
+
+- name: restart nova
+  service: name={{ item }} state=restarted 
+  with_items:
+   - openstack-nova-api
+   - openstack-nova-scheduler
+   - openstack-nova-network
+   - openstack-nova-cert
+   - openstack-nova-console
+   - openstack-nova-conductor
+
+- name: restart quantum
+  service: name={{ item }} state=restarted 
+  with_items:
+   - quantum-server
+   - quantum-l3-agent
+   - quantum-dhcp-agent
+   - quantum-openvswitch-agent
+
+- name: restart cinder
+  service: name={{ item }} state=restarted enabled=yes
+  with_items:
+   - openstack-cinder-api
+   - openstack-cinder-scheduler
+   - openstack-cinder-volume
+
+- name: restart tgtd
+  service: name=tgtd state=restarted
+
+- name: reload kernel parameters
+  shell: sysctl -p
+
+- name: restart horizon
+  service: name={{ item }} state=restarted
+  with_items:
+   - openstack-nova-consoleauth
+   - openstack-nova-novncproxy
+   - httpd
+   - memcached

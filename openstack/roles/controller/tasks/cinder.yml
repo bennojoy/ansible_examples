@@ -1,0 +1,37 @@
+---
+# Tasks for the cinder controller node
+
+- name: Install OpenStack cinder  packages.
+  yum: name=openstack-cinder state=installed
+   
+- name: Setup DB for nova
+  shell: /usr/bin/openstack-db --init --service cinder -p {{ cinder_db_pass }} -r " " -y 
+         creates=/var/lib/mysql/cinder
+
+- name: copy configuration file for nova
+  template: src=cinder.conf.j2 dest=/etc/cinder/cinder.conf
+  notify: restart cinder
+
+- name: copy tgtd configuration file for nova
+  template: src=targets.conf.j2 dest=/etc/tgt/targets.conf
+  notify: restart tgtd
+
+- name: start the tgtd service
+  service: name=tgtd state=started enabled=yes
+
+- name: DB sync for the nova services
+  shell: cinder-manage db sync; touch /etc/cinder/db.synced
+         creates=/etc/cinder/db.synced
+
+- name: create the volume group for cinder
+  shell: vgcreate cinder-volumes {{ cinder_volume_dev }} 
+         creates=/etc/lvm/backup/cinder-volumes
+
+- name: Start the services for cinder
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+   - openstack-cinder-api
+   - openstack-cinder-scheduler
+   - openstack-cinder-volume
+
+

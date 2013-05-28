@@ -1,0 +1,23 @@
+---
+# Tasks for the base controller node
+
+- name: Install the base packages
+  yum: name={{ item }} state=installed
+  with_items: 
+   - mysql
+   - mysql-server
+   - MySQL-python
+   - qpid-cpp-client
+   - qpid-cpp-server
+   - openstack-utils
+
+- name: start the services
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+   - mysqld
+   - qpidd
+
+
+
+
+

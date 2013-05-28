@@ -1,0 +1,9 @@
+---
+# Upload an image
+- hosts: openstack_controller
+  tasks: 
+    - name: upload the file to glance
+      glance_image: login_username={{ admin_tenant_user }} login_password={{ admin_pass }} 
+                    login_tenant_name={{ admin_tenant }} name={{ image_name }} container_format=bare 
+                    disk_format=qcow2 state=present copy_from={{ image_url }}
+         

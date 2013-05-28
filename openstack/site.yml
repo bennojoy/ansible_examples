@@ -1,0 +1,16 @@
+---
+# The main openstack site deployment playbook
+
+- hosts: all
+  roles:
+   - common
+
+- hosts: openstack_controller
+  roles:
+   - controller
+
+- hosts: openstack_compute
+  roles:
+   - compute
+ 
+ 

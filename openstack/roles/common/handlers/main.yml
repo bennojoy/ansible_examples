@@ -1,0 +1,13 @@
+---
+# handlers for the common tasks
+
+- name: restart iptables
+  service: name=iptables state=restarted
+
+- name: restart services
+  service: name={{ item }} state=restarted
+  with_items:
+   - ntpd
+   - messagebus
+
+

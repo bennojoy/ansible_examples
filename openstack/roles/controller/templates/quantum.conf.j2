@@ -1,0 +1,29 @@
+{% set head_node = hostvars[groups['openstack_controller'][0]] %}
+[DEFAULT]
+lock_path = $state_path/lock
+bind_host = 0.0.0.0
+bind_port = 9696
+api_paste_config = api-paste.ini
+auth_strategy = keystone
+control_exchange = quantum
+allow_overlapping_ips = False
+notification_topics = notifications
+core_plugin = quantum.plugins.openvswitch.ovs_quantum_plugin.OVSQuantumPluginV2
+rpc_backend = quantum.openstack.common.rpc.impl_qpid
+qpid_hostname = {{ head_node.ansible_default_ipv4.address }}
+
+[QUOTAS]
+
+[DEFAULT_SERVICETYPE]
+
+[AGENT]
+
+[keystone_authtoken]
+auth_host = {{ head_node.ansible_default_ipv4.address }}
+auth_port = 35357
+auth_protocol = http
+signing_dir = /var/lib/quantum/keystone-signing
+admin_tenant_name = admin
+admin_user = admin
+admin_password = {{ admin_pass }}
+

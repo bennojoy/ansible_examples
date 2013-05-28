@@ -1,0 +1,29 @@
+---
+# Variables for openstack
+
+keystone_db_pass: keystone
+keystone_admin_token: ADMIN
+
+glance_db_pass: glance
+glance_filesystem_store_datadir: /var/lib/glance/images/
+
+nova_db_pass: nova
+nova_libvirt_type: qemu
+
+quantum_db_pass: quantum
+quantum_external_interface: eth2
+
+cinder_db_pass: cinder
+cinder_volume_dev: /dev/vda3
+
+external_network_name: external_network
+external_subnet_name: external_sub_network
+external_subnet_cidr: 1.1.1.0/24
+external_router_name: external_router
+#
+#By default a tenant admin is created and below is the password for the admin user of the admin tenant.
+#
+admin_tenant: admin
+admin_tenant_user: admin
+admin_pass: secret 
+

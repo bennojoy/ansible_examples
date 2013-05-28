@@ -1,0 +1,25 @@
+---
+# Tasks for the Horizon controller node
+
+- name: Install OpenStack Horizon  packages.
+  yum: name={{ item }} state=installed
+  with_items: 
+   - memcached 
+   - python-memcached 
+   - mod_wsgi 
+   - openstack-dashboard
+   - openstack-nova-novncproxy
+
+- name: Copy the configuration files for horizon
+  template: src=local_settings.j2 dest=/etc/openstack-dashboard/local_settings
+  notify: restart horizon
+
+- name: Start the services for horizon
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+   - openstack-nova-consoleauth
+   - openstack-nova-novncproxy
+   - httpd
+   - memcached
+
+

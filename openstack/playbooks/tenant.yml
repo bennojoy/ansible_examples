@@ -1,0 +1,29 @@
+---
+# Creates tenant user and role
+
+- hosts: openstack_controller
+  tasks:
+   - name: Create Tenant
+     keystone_user: token={{ keystone_admin_token }} tenant={{ tenant_name }} tenant_description="New Tenant"
+   
+   - name: Create the user for tenant
+     keystone_user: token={{ keystone_admin_token }}  user={{ tenant_username }} tenant={{ tenant_name }} 
+                                  password={{ tenant_password }}
+  
+   - name: Assign role to the created user     
+     keystone_user: token={{ keystone_admin_token }} role=admin user={{ tenant_username }} tenant={{ tenant_name }}
+   
+   - name: Create a network for the tenant
+     quantum_network: state=present login_username={{ admin_tenant_user }} login_password={{ admin_pass }}                     
+                      provider_network_type=gre login_tenant_name={{ admin_tenant }}   
+                      provider_segmentation_id={{ tunnel_id }} tenant_name={{ tenant_name }} name={{ network_name }}
+
+   - name: Create a subnet for the network
+     quantum_subnet: state=present login_username={{ admin_tenant_user }} login_password={{ admin_pass }}
+                     login_tenant_name={{ admin_tenant }} tenant_name={{ tenant_name }}                           
+                     network_name={{ network_name }} name={{ subnet_name }} cidr={{ subnet_cidr }}
+
+
+   - name: Add the network interface to the router
+     quantum_router_interface: state=present login_username={{ admin_tenant_user }} login_password={{ admin_pass }}                               login_tenant_name={{ admin_tenant }} tenant_name={{ tenant_name }} router_name={{ external_router_name }}
+                               subnet_name={{ subnet_name }}

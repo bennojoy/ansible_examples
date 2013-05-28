@@ -1,0 +1,13 @@
+---
+# Handler for the compute node
+
+- name: restart libvirtd
+  service: name=libvirtd state=restarted
+
+- name: restart nova compute
+  service: name=openstack-nova-compute state=restarted enabled=yes
+
+- name: restart quantum ovsagent
+  service: name=quantum-openvswitch-agent state=restarted enabled=yes
+
+

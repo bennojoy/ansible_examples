@@ -1,0 +1,9 @@
+[DEFAULT]
+interface_driver = quantum.agent.linux.interface.OVSInterfaceDriver
+dhcp_driver = quantum.agent.linux.dhcp.Dnsmasq
+auth_url = http://{{ hostvars[groups['openstack_controller'][0]].ansible_default_ipv4.address }}:35357/v2.0/
+admin_username = admin
+admin_password = {{ admin_pass }}
+admin_tenant_name = admin
+use_namespaces = False
+root_helper=sudo quantum-rootwrap /etc/quantum/rootwrap.conf

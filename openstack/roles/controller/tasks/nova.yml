@@ -1,0 +1,28 @@
+---
+# Tasks for the nova controller node
+
+- name: Install OpenStack nova  packages.
+  yum: name=openstack-nova state=installed
+   
+- name: Setup DB for nova
+  shell: /usr/bin/openstack-db --init --service nova -p {{ nova_db_pass }} -r " " -y 
+         creates=/var/lib/mysql/nova
+
+- name: DB sync for the nova services
+  shell: nova-manage db sync; touch /etc/nova/db.synced
+         creates=/etc/nova/db.synced
+
+- name: copy configuration file for nova
+  template: src=nova.conf.j2 dest=/etc/nova/nova.conf
+  notify: restart nova
+
+- name: Start the services for nova
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+   - openstack-nova-api
+   - openstack-nova-scheduler
+   - openstack-nova-network
+   - openstack-nova-cert
+   - openstack-nova-console
+   - openstack-nova-conductor
+

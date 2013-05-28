@@ -1,0 +1,85 @@
+---
+# Tasks for the quantum controller node
+
+- name: Install packages for quantum
+  yum: name={{ item }} state=installed
+  with_items:
+   - openstack-quantum
+   - openstack-quantum-openvswitch
+
+
+- name: Enable ipv4 forwarding in the host
+  sysctl: name=net.ipv4.ip_forward value=1 reload=yes
+
+- name: Setup DB for quantum
+  shell: /usr/bin/quantum-server-setup -q {{ quantum_db_pass }} -r " " -u quantum --plugin openvswitch -y
+         creates=/var/lib/mysql/ovs_quantum
+
+- name: Give right to quantum user.
+  mysql_user: name=quantum password={{ quantum_db_pass }} priv=*.*:ALL host='localhost' state=present
+
+- name: Give right to quantum user.
+  mysql_user: name=quantum password={{ quantum_db_pass }} priv=*.*:ALL host='%' state=present
+
+- name: Copy the quantum.conf  configuration files 
+  template: src=quantum.conf.j2 dest=/etc/quantum/quantum.conf
+  notify:  restart quantum
+  tags: test
+
+- name: Copy the quantum dhcp agent configuration files 
+  template: src=dhcp_agent.ini.j2 dest=/etc/quantum/dhcp_agent.ini
+  notify:  restart quantum
+
+
+- name: Copy the quantum ovs agent configuration files 
+  template: src=ovs_quantum_plugin.ini.j2 dest=/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini
+  notify:  restart quantum
+
+- name: Create the external bridges for openvswitch
+  shell: /usr/bin/ovs-vsctl add-br br-ex; touch /etc/quantum/br-ex.created
+         creates=/etc/quantum/br-ex.created
+
+- name: Create the internal bridges for openvswitch
+  shell: /usr/bin/ovs-vsctl add-br br-int; touch /etc/quantum/br-int.created
+         creates=/etc/quantum/br-int.created
+
+- name: Add the interface for the external bridge
+  shell: /usr/bin/ovs-vsctl add-port br-ex {{ quantum_external_interface }}; touch /etc/quantum/br-ext.interface
+         creates=/etc/quantum/br-ext.interface
+
+- name: Start the quantum services
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+   - quantum-server
+   - quantum-dhcp-agent
+   - quantum-openvswitch-agent
+
+- local_action: pause seconds=20
+
+- name: create the external network
+  quantum_network: state=present login_username={{ admin_tenant_user }} login_password={{ admin_pass }} provider_network_type=local
+                   login_tenant_name={{ admin_tenant }} name={{ external_network_name }} router_external=true
+  register: network
+
+- name: create external router
+  quantum_router: state=present login_username={{ admin_tenant_user }} login_password={{ admin_pass }} 
+                  login_tenant_name={{ admin_tenant }} name={{ external_router_name }}
+  register: router
+
+- name: create the subnet for external  network
+  quantum_subnet: state=present login_username={{ admin_tenant_user }} login_password={{ admin_pass }} 
+                  login_tenant_name={{ admin_tenant }} enable_dhcp=false network_name={{ external_network_name }} 
+                  name={{ external_subnet_name }} cidr={{ external_subnet_cidr }}
+
+- name: Copy the quantum l3 agent configuration files 
+  template: src=l3_agent.ini.j2 dest=/etc/quantum/l3_agent.ini
+  notify:  restart quantum
+
+- name: Start the quantum l3 services
+  service: name=quantum-l3-agent state=started enabled=yes
+
+- name: create external interface for router
+  quantum_router_gateway: state=present login_username={{ admin_tenant_user }} login_password={{ admin_pass }} 
+                          login_tenant_name={{ admin_tenant }} router_name={{ external_router_name }} 
+                          network_name={{ external_network_name }}
+

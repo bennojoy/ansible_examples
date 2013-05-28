@@ -1,0 +1,7 @@
+[openstack_controller]
+openstack-controller
+
+[openstack_compute]
+openstack-compute
+
+

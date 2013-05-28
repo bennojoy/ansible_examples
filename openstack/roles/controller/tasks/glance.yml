@@ -1,0 +1,28 @@
+---
+# Tasks for the glance controller node
+
+- name: Install glance OpenStack  components
+  yum: name=openstack-glance state=installed
+
+- name: Setup DB for glance
+  shell: /usr/bin/openstack-db --init --service glance -p {{ glance_db_pass }} -r " " -y 
+         creates=/var/lib/mysql/glance
+
+- name: Copy configuration files for glance
+  template: src=glance-api.conf.j2 dest=/etc/glance/glance-api.conf
+  notify: restart glance
+
+- name: Copy configuration files for glance
+  template: src=glance-registry.conf.j2 dest=/etc/glance/glance-registry.conf
+  notify: restart glance
+
+- name: DB sync for Glance
+  shell: /usr/bin/glance-manage db_sync; touch /etc/glance/db.synced
+         creates=/etc/glance/db.synced
+
+- name: start the glance services
+  service: name={{ item }} state=started enabled=yes
+  with_items:
+   - openstack-glance-api
+   - openstack-glance-registry
+

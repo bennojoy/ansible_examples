@@ -1,0 +1,45 @@
+---
+# Playbook to create vm for a tenant
+
+- hosts: openstack_controller
+  tasks:
+   - name: Get the image id from glance
+     glance_image: login_username={{ tenant_username }} login_password={{ tenant_password }}
+                    login_tenant_name={{ tenant_name }} name={{ image_name }} state=present copy_from="http://127.0.0.1/dummy"
+     register: image
+   
+   - name: Create keypair for tenant
+     nova_keypair: state=present login_username={{ tenant_username }} login_password={{ tenant_password }}
+                   login_tenant_name={{ tenant_name }} name={{ keypair_name }}
+                   public_key="{{ lookup('file','~/.ssh/id_rsa.pub') }}"
+   
+   - name: Get network id  for the tenant
+     quantum_network: state=present login_username={{ tenant_username }} login_password={{ tenant_password }}
+                      login_tenant_name={{ tenant_name }} name={{ network_name }}
+     register: network
+   
+   - name: Create a vm for the tenant
+     nova_compute: 
+       state: present
+       login_username: '{{ tenant_username }}' 
+       login_password: '{{ tenant_password }}' 
+       login_tenant_name: '{{ tenant_name }}'
+       name: '{{ vm_name }}'
+       image_id: '{{ image.id }}' 
+       key_name: '{{ keypair_name }}'
+       wait_for: 440
+       flavor_id: '{{ flavor_id }}'
+       nics:
+         - net-id: '{{ network.id }}'
+       meta:
+         hostname: test1
+         group: uge_master
+     register: vm
+
+   - name: Assign a public ip to vm
+     quantum_floating_ip: state=present login_username={{ tenant_username }} login_password={{ tenant_password }} 
+                          login_tenant_name={{ tenant_name }} network_name={{ external_network_name }} instance_name={{ vm_name }}
+   
+   
+   - name: Let's wait till the instance comes up
+     wait_for: port=22 delay=10 host={{ vm.private_ip }}

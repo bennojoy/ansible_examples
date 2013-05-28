@@ -1,0 +1,19 @@
+[DEFAULT]
+logdir = /var/log/cinder
+state_path = /var/lib/cinder
+lock_path = /var/lib/cinder/tmp
+volumes_dir = /etc/cinder/volumes
+iscsi_helper = tgtadm
+sql_connection = mysql://cinder:{{ cinder_db_pass }}@localhost/cinder
+rpc_backend = cinder.openstack.common.rpc.impl_qpid
+rootwrap_config = /etc/cinder/rootwrap.conf
+auth_strategy = keystone
+
+[keystone_authtoken]
+admin_tenant_name = admin
+admin_user = admin
+admin_password = {{ admin_pass }}
+auth_host = localhost
+auth_port = 35357
+auth_protocol = http
+signing_dirname = /tmp/keystone-signing-cinder

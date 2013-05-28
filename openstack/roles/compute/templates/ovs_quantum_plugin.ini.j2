@@ -1,0 +1,17 @@
+[DATABASE]
+sql_connection = mysql://quantum:{{ quantum_db_pass }}@{{ hostvars[groups['openstack_controller'][0]].ansible_default_ipv4.address }}/ovs_quantum
+reconnect_interval = 2
+
+[OVS]
+tenant_network_type = gre
+tunnel_id_ranges = 1:1000
+enable_tunneling = True
+local_ip = {{ ansible_default_ipv4.address }}
+
+[AGENT]
+polling_interval = 2
+root_helper=sudo quantum-rootwrap /etc/quantum/rootwrap.conf
+
+[SECURITYGROUP]
+firewall_driver = quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver
+

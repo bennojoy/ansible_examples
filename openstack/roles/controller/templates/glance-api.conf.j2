@@ -1,0 +1,46 @@
+[DEFAULT]
+default_store = file
+bind_host = 0.0.0.0
+bind_port = 9292
+log_file = /var/log/glance/api.log
+backlog = 4096
+sql_connection = mysql://glance:{{ glance_db_pass }}@localhost/glance
+sql_idle_timeout = 3600
+workers = 1
+enable_v1_api = True
+enable_v2_api = True
+registry_host = 0.0.0.0
+registry_port = 9191
+registry_client_protocol = http
+qpid_notification_exchange = glance
+qpid_notification_topic = notifications
+qpid_host = localhost
+qpid_port = 5672
+qpid_username =
+qpid_password =
+qpid_sasl_mechanisms =
+qpid_reconnect_timeout = 0
+qpid_reconnect_limit = 0
+qpid_reconnect_interval_min = 0
+qpid_reconnect_interval_max = 0
+qpid_reconnect_interval = 0
+qpid_heartbeat = 5
+# Set to 'ssl' to enable SSL
+qpid_protocol = tcp
+qpid_tcp_nodelay = True
+filesystem_store_datadir = {{ glance_filesystem_store_datadir }}
+delayed_delete = False
+image_cache_dir = /var/lib/glance/image-cache/
+
+[keystone_authtoken]
+auth_host = 127.0.0.1
+auth_port = 35357
+auth_protocol = http
+admin_tenant_name = admin
+admin_user = admin
+admin_password = {{ admin_pass }}
+
+[paste_deploy]
+config_file = /etc/glance/glance-api-paste.ini
+flavor=keystone
+

@@ -1,0 +1,49 @@
+---
+# Tasks for the openstack compute nodes
+
+- name: Install the required virtualization packages
+  yum: name={{ item }} state=installed
+  with_items:
+   - qemu-img
+   - qemu-kvm
+   - qemu-kvm-tools
+   - libvirt
+   - libvirt-client
+   - libvirt-python
+   - libguestfs-tools
+
+- name: Configure qemu.conf in libvirt
+  copy: src=qemu.conf.j2 dest=/etc/libvirt/qemu.conf
+  notify: restart libvirtd
+
+- name: service libvirt start
+  service: name=libvirtd state=started enabled=yes
+
+- name: create link for the qemu
+  file: src=/usr/libexec/qemu-kvm dest=/usr/bin/qemu-system-x86_64 state=link
+
+- name: Install packages for openstack
+  yum: name={{ item }} state=installed
+  with_items:
+   - openstack-nova-compute
+   - openstack-quantum-openvswitch
+
+- name: Create the internal bridges for openvswitch
+  shell: creates=/etc/quantum/br-int.created /usr/bin/ovs-vsctl add-br br-int; touch /etc/quantum/br-int.created
+
+- name: Copy the quantum.conf  configuration files
+  template: src=roles/controller/templates/quantum.conf.j2 dest=/etc/quantum/quantum.conf
+
+- name: Copy the quantum ovs agent configuration files
+  template: src=ovs_quantum_plugin.ini.j2 dest=/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini
+  notify:  restart quantum ovsagent
+
+- name: Copy the nova configuration files
+  template: src=nova.conf.j2 dest=/etc/nova/nova.conf
+  notify:  restart nova compute
+
+- name: Give permissions to lock folder
+  file: path=/var/lock state=directory owner=root group=root mode=0777
+
+- name: Copy the modified file for key injection bug
+  copy: src=guestfs.py dest=/usr/lib/python2.6/site-packages/nova/virt/disk/vfs/
