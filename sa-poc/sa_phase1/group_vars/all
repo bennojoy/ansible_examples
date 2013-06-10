@@ -1,0 +1,4 @@
+---
+
+sge_root_dir: /sge_root
+sge_user: sge

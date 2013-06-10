@@ -1,0 +1,9 @@
+---
+# Handlers for nfs servers
+
+- name: restart nfs
+  service: name={{ item }} state=restarted 
+  with_items:
+   - rpcbind
+   - nfs
+   - nfslock

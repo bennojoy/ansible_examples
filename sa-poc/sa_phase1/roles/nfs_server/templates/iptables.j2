@@ -1,0 +1,25 @@
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -p tcp  --dport 6444 -j  ACCEPT
+-A INPUT -p udp  --dport 6444 -j  ACCEPT
+-A INPUT -p tcp  --dport 6445 -j  ACCEPT
+-A INPUT -p udp  --dport 6445 -j  ACCEPT
+-A INPUT -p tcp  --dport 111 -j  ACCEPT
+-A INPUT -p tcp  --dport 2049 -j  ACCEPT
+-A INPUT -p tcp  --dport {{ LOCKD_TCPPORT  }} -j  ACCEPT
+-A INPUT -p udp  --dport {{ LOCKD_UDPPORT  }} -j  ACCEPT
+-A INPUT -p tcp  --dport {{ MOUNTD_PORT  }} -j  ACCEPT
+-A INPUT -p tcp  --dport {{ RQUOTAD_PORT  }} -j  ACCEPT
+-A INPUT -p tcp  --dport {{ STATD_PORT  }} -j  ACCEPT
+-A INPUT -p tcp  --dport {{ STATD_OUTGOING_PORT  }} -j  ACCEPT
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT

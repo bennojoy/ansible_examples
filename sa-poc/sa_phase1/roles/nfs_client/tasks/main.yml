@@ -1,0 +1,19 @@
+---
+# Tasks for nfs client
+
+- name: Install packages for nfs
+  yum: name={{ item }} state=installed
+  with_items:
+   - nfs-utils
+
+- name: Create the directory for nfs export
+  file: path={{ nfs_client_dir }} state=directory owner={{ sge_user }} mode={{ nfs_dir_perm }}
+
+- name: mount the nfs share
+  mount: name={{ nfs_client_dir }} fstype=nfs src={{ groups['nfs_server'][0] +"".join(':')+ nfs_client_dir }} opts=rw,soft,intr 
+               state=present
+  register: last_result
+
+- name: mount all network filesystems
+  service: name=netfs state=restarted
+  when: last_result.changed

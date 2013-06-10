@@ -1,0 +1,31 @@
+---
+#The task for setting up nfs server
+
+- name: Install packages for nfs
+  yum: name={{ item }} state=installed
+  with_items:
+   - nfs-utils
+   - rpcbind
+
+- name: Create the directory for nfs export
+  file: path={{ nfs_share_dir }} state=directory owner={{ sge_user }} mode={{ nfs_dir_perm }}
+
+- name: create the exportfs file
+  template: src=exportfs.j2 dest=/etc/exports
+  notify: restart nfs 
+
+- name: configure static ports for nfs services
+  template: src=nfs.j2 dest=/etc/sysconfig/nfs
+
+- name: setup iptables rules
+  template: src=iptables.j2 dest=/etc/sysconfig/iptables
+  notify: restart iptables
+
+- name: start the nfs services
+  service: name={{ item }} state=started enabled=yes
+  with_items: 
+   - rpcbind
+   - nfs
+   - nfslock
+
+  

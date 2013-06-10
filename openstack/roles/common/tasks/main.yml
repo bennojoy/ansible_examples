@@ -2,16 +2,10 @@
 # The common tasks
 
 - name: copy yum repo files 
-  copy: src={{ item.file }} dest={{ item.dest }}
+  copy: src={{ item }} dest=/etc/yum.repos.d/
   with_items:
-   - file: epel.repo 
-     dest: /etc/yum.repos.d/
-   - file: epel-openstack-grizzly.repo
-     dest: /etc/yum.repos.d/
-   - file: kmod-openvswitch-1.10.90-1.el6.x86_64.rpm
-     dest: /opt/
-   - file: openvswitch-1.10.90-1.x86_64.rpm
-     dest: /opt/
+   - epel.repo 
+   - epel-openstack-grizzly.repo
 
 - name: Create the GPG key for EPEL
   copy: src=RPM-GPG-KEY-EPEL-6 dest=/etc/pki/rpm-gpg
@@ -23,17 +17,51 @@
    - sudo
    - scsi-target-utils
    - dbus
+   - libselinux-python
+   - openssl-devel
   notify: restart services 
 
 - name: Remove previous openvwitch if installed
   yum: name=openvswitch-1.9.0 state=absent
 
+- name: Check if custom Openvswitch is installed
+  shell: rpm -qa | grep kmod-openvswitch-1.10 | cut -d- -f3
+  register: vswitch_version
+
+- name: Install Development tools
+  shell: yum -y groupinstall "Development Tools"
+  when: vswitch_version.stdout != '1.10.0'
+
+- name: Create the directories for compiling the openvswitch source
+  file: path=/root/rpmbuild/SOURCES state=directory
+
+- name: Get the Openvswitch stable release
+  get_url: url=http://openvswitch.org/releases/openvswitch-1.10.0.tar.gz dest=/root/rpmbuild/SOURCES/
+  when: vswitch_version.stdout != '1.10.0'
+
+- name: Copy the kmod spec file
+  copy: src=openvswitch-kmod.files dest=/root/rpmbuild/SOURCES/
+
+- name: Copy the spec files for rpmbuild
+  copy: src={{ item }} dest=/root
+  with_items:
+    - openvswitch-kmod-rhel6.spec
+    - openvswitch.spec
+
+- name: Build the Openvswitch kernel module.
+  shell: chdir=/root rpmbuild -bb /root/openvswitch-kmod-rhel6.spec
+         creates=/root/rpmbuild/RPMS/x86_64/kmod-openvswitch-1.10.0-1.el6.x86_64.rpm 
+
+- name: Build the Openvswitch userspace application.
+  shell: chdir=/root rpmbuild -bb /root/openvswitch.spec
+         creates=/root/rpmbuild/RPMS/x86_64/openvswitch-1.10.0-1.x86_64.rpm 
+
 - name: Install the custom vswitch  kernel rpm.
-  shell: yum -y localinstall /opt/kmod-openvswitch-1.10.90-1.el6.x86_64.rpm
+  shell: yum -y localinstall /root/rpmbuild/RPMS/x86_64/kmod-openvswitch-1.10.0-1.el6.x86_64.rpm
          creates=/lib/modules/2.6.32-358.2.1.el6.x86_64/extra/openvswitch/openvswitch.ko
 
 - name: Install the custom openvswitch rpm
-  shell: yum -y localinstall /opt/openvswitch-1.10.90-1.x86_64.rpm
+  shell: yum -y localinstall /root/rpmbuild/RPMS/x86_64/openvswitch-1.10.0-1.x86_64.rpm
          creates=/usr/share/doc/openvswitch-1.10.90/FAQ
 
 - name: Create the hosts entry.
@@ -42,11 +70,11 @@
 - name: start the openvswitch service.
   service: name=openvswitch state=started
 
-- name: Disable SELinux in conf file
-  lineinfile: dest=/etc/sysconfig/selinux regexp='^SELINUX=' line='SELINUX=disabled' state=present
-
 - name: Disable selinux dynamically
   shell: creates=/etc/sysconfig/selinux.disabled setenforce 0 ; touch /etc/sysconfig/selinux.disabled
+
+- name: Disable SELinux in conf file
+  copy: src=selinux dest=/etc/sysconfig/selinux
 
 - name: Disable iptables
   service: name=iptables state=stopped enabled=no

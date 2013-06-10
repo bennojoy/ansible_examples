@@ -1,0 +1,14 @@
+[nfs_server]
+vm1
+
+[nfs_client]
+vm2
+
+[sge_master]
+vm1
+
+[sge_slaves]
+vm1
+vm2
+
+

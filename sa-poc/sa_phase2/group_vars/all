@@ -1,0 +1,18 @@
+---
+
+sge_root_dir: /sge_root
+sge_user: sge
+
+#static ports for nfs
+
+LOCKD_TCPPORT: 32803
+LOCKD_UDPPORT: 32769
+MOUNTD_PORT: 892
+RQUOTAD_PORT: 875
+STATD_PORT: 662
+STATD_OUTGOING_PORT: 2020
+
+#ganglia ports
+gmond_port: 8649
+http_port: 80
+

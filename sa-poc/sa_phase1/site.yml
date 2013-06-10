@@ -1,0 +1,22 @@
+---
+# The main file
+
+- hosts: all
+  user: root
+  roles:
+   - role: common
+
+- hosts: nfs_server
+  user: root
+  roles:
+   - role: nfs_server
+  
+- hosts: nfs_client
+  user: root
+  roles:
+   - role: nfs_client
+
+- hosts: sge_master
+  user: '{{ sge_user }}'
+  roles:
+   - role: sge_master  

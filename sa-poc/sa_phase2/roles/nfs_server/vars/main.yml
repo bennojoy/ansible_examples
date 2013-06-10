@@ -1,0 +1,7 @@
+---
+# Parameters for the nfs server.
+
+nfs_share_dir: /sge_root
+nfs_dir_perm: 777
+nfs_subnet_cidr: 192.168.2.0/24
+

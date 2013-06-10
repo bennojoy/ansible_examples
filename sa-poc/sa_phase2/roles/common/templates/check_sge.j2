@@ -1,0 +1,102 @@
+#!/bin/sh
+
+# Check Sun Grid Engine using qping.
+# Dave Love <fx@gnu.org>, 2008-03-27
+# Copyright (C) 2008  University of Liverpool
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+
+# Configure this.  It's probably not worth feeding it as an arg.
+. {{ sge_root_dir }}/default/common/settings.sh
+
+if [ -f /bin/basename ]; then
+    PROGNAME=`/bin/basename $0`
+else
+    PROGNAME=`/usr/bin/basename $0`
+fi
+REVISION=1.0
+PROGPATH=`echo $0 | /bin/sed -e 's,[\\/][^\\/][^\\/]*$,,'`
+
+. $PROGPATH/utils.sh
+
+usage () {
+    echo "\
+Sun Grid Engine plugin for Nagios using qping to check daemon status
+
+-H, --hostname=HOST	Name of host to check
+-P, --port=PORT		Port on which service runs (default $SGE_EXECD_PORT for execd,
+                        $SGE_QMASTER_PORT for qmaster)
+-d, --daemon=NAME       Name of daemon to check, either 'execd' or 'qmaster'
+                        (default 'execd')
+-h, --help 		Print this help
+--version 		Print version"
+}
+
+help () {
+    print_revision $PROGNAME $REVISION
+    echo; usage; echo; support
+}
+
+cleanup () {
+    exit $state
+}
+
+arg () {
+  expr $1 : '[^=]*=\(.*\)'
+}
+
+daemon=execd
+
+while [ $# -gt 0 ]; do
+    case $1 in
+	-h|--help) help; exit $STATE_OK;;
+	-H|--hostname) shift; host=$1; shift;;
+	--hostname=*) host=$(arg $1); shift;;
+	-P|--port) shift; port=$1; shift;;
+	--port=*) port=$(arg $1); shift;;
+	-d|--daemon) shift; daemon=$1; shift;;
+	--daemon=*) daemon=$(arg $1); shift;;
+        --version | -V)
+            print_revision $PROGNAME $REVISION
+            exit $STATE_OK;;
+	*) usage; exit $STATE_UNKNOWN;;
+    esac
+done
+
+if [ -z "$host" ]; then
+    usage; exit $STATE_UNKNOWN
+fi
+
+case $daemon in
+    execd) [ -z "$port" ] && port=$SGE_EXECD_PORT ;;
+    qmaster) [ -z "$port" ] && port=$SGE_QMASTER_PORT ;;
+    *) usage; exit $STATE_UNKNOWN ;;
+esac
+
+state=$STATE_CRITICAL
+trap cleanup EXIT
+
+# Don't worry about a pathname, as the SGE binaries are set at the
+# front of the path by settings.sh.
+result=$(qping -info $host $port $daemon 1 2>&1)
+
+if [ $? -eq 0 ]; then
+    echo "$daemon OK / $result" | tail -n +6 | tr '\n' ';' |
+      sed -e 's/;;*$//' -e 's/;/; /g' -e 's/:  */: /g'
+    echo
+    state=$STATE_OK
+else
+    echo "CRITICAL Checking $daemon: $result" |
+      tr '\n' ';' | sed -e 's/;;*$//' -e 's/;/; /g' -e 's/:  */: /g'
+fi

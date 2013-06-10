@@ -1,0 +1,12 @@
+---
+# Security policies for this env
+
+- name: Postfix service should not be running
+  service: name=postfix state=stopped enabled=no
+
+- name: File permission of /etc/passwd should be 644
+  file: path=/etc/passwd mode=644
+
+- name: The file /etc/security/chroot.conf should be same as the template
+  template: src=chroot.conf.j2 dest=/etc/security/chroot.conf
+

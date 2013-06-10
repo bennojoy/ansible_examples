@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+
+define hostgroup {
+	hostgroup_name sge_master
+        alias SGE Master
+}
+
+{% for host in groups['sge_master'] %}
+define host {
+	use                     linux-server
+	host_name               {{ host }} 
+	alias                   {{ host }}
+	address                 {{ hostvars[host].ansible_default_ipv4.address }}
+	hostgroups 		sge_master
+}
+{% endfor %}

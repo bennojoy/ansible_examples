@@ -1,0 +1,36 @@
+---
+#Tasks for SGE master
+
+- name: Copy the current private and public key
+  copy: src=~/.ssh/id_rsa dest=~/.ssh/
+
+- name: Copy the current private and public key
+  copy: src=~/.ssh/id_rsa.pub dest=~/.ssh/
+
+- name: Set the no strict host checking
+  copy: dest=~/.ssh/config content="StrictHostKeyChecking=no" mode=400
+
+- name: copy the files for sge installation
+  copy: src={{ item }} dest={{ sge_root_dir }} owner={{ sge_user }}
+  with_items:
+   - ge-8.1.3-demo-common.tar.tar.tar.gz
+   - ge-8.1.3-demo-bin-lx-amd64.tar.tar.gz
+
+- name: extract the sge tars
+  shell: chdir={{ sge_root_dir }} tar -xvzf ge-8.1.3-demo-common.tar.tar.tar.gz 
+         creates={{ sge_root_dir }}/doc
+
+- name: extract the sge tars
+  shell: chdir={{ sge_root_dir }} tar -xvzf ge-8.1.3-demo-bin-lx-amd64.tar.tar.gz 
+         creates={{ sge_root_dir }}/bin
+
+- name: Copy the automated installation script
+  template: src=inst_template.conf.j2 dest={{ sge_root_dir }}/install_sge_template
+
+- name: Install the qmaster
+  shell: chdir={{ sge_root_dir }} ./inst_sge -m -auto ./install_sge_template; touch qmaster.installed
+         creates={{ sge_root_dir }}/qmaster.installed
+ 
+- name: Install the execution nodes
+  shell: chdir={{ sge_root_dir }} ./inst_sge -x -auto ./install_sge_template; touch qexec.installed
+         creates={{ sge_root_dir }}/qexec.installed

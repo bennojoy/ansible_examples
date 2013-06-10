@@ -1,0 +1,40 @@
+---
+# The main file
+
+- hosts: all
+  user: root
+  roles:
+   - role: common
+   - role: security
+     tags: secure
+
+- hosts: nfs_server
+  user: root
+  roles:
+   - role: nfs_server
+  
+- hosts: nfs_client
+  user: root
+  roles:
+   - role: nfs_client
+
+- hosts: ganglia_servers
+  user: root
+  roles:
+   - role: ganglia_server
+
+- hosts: all:!monitoring
+  user: root
+  roles: 
+   - role: ganglia_client 
+
+- hosts: sge_master
+  user: '{{ sge_user }}'
+  roles:
+   - role: sge_master  
+
+- hosts: monitoring
+  user: root
+  roles:
+  - base-apache
+  - nagios

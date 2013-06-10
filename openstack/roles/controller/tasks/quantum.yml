@@ -47,6 +47,10 @@
   shell: /usr/bin/ovs-vsctl add-port br-ex {{ quantum_external_interface }}; touch /etc/quantum/br-ext.interface
          creates=/etc/quantum/br-ext.interface
 
+- name: copy configuration file for nova
+  template: src=nova.conf.j2 dest=/etc/nova/nova.conf
+  notify: restart nova
+
 - name: Start the quantum services
   service: name={{ item }} state=started enabled=yes
   with_items:

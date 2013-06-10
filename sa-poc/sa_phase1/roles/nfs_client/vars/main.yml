@@ -1,0 +1,2 @@
+nfs_client_dir: /sge_root
+nfs_dir_perm: 777

@@ -1,0 +1,20 @@
+---
+- hosts: monitoring
+  tasks:
+
+- hosts: sge_slaves
+  serial: 1
+  tasks:
+   - name: disable nagios alerts for this host 
+     nagios: action=disable_alerts host={{ ansible_hostname }} services=sge_slaves
+     delegate_to: "{{ item }}"
+     with_items: groups.monitoring
+
+   - name: stop the execd service
+     shell: "{{ sge_root_dir }}/default/common/sgeexecd stop"
+   
+   - local_action: pause seconds=60
+
+   - name: start the execd service
+     shell: su - sge -c "export SGE_ROOT={{ sge_root_dir }} ;{{ sge_root_dir }}/default/common/sgeexecd start"
+   

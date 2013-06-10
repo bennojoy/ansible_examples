@@ -1,0 +1,13 @@
+# this file defines behavior for the 'monitored_server' class of nodes
+
+- name: install gmond
+  yum: pkg=ganglia-gmond state=installed
+
+- name: configure gmond
+  template: src=gmond.conf dest=/etc/ganglia/gmond.conf owner=root group=root
+  notify:
+      - restart gmond
+
+- name: ensure ganglia is running
+  service: name=gmond state=running enabled=yes
+

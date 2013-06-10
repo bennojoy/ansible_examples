@@ -1,0 +1,13 @@
+# this file defines event handlers which are triggered when certain
+# resources change, as referenced in the 'tasks' sections of various
+# playbook plays
+
+- name: restart gmetad
+  action: service name=gmetad state=restarted
+
+- name: restart gmond
+  action: service name=gmond state=restarted
+
+- name: restart httpd
+  action: service name=httpd state=restarted
+

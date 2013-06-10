@@ -1,0 +1,69 @@
+---
+- hosts: monitoring
+  tasks:
+
+- hosts: sge_master
+  user: sge
+  vars:
+    sge_path:
+      SGE_ROOT: "{{ sge_root_dir }}"
+      PATH: "{{ sge_root_dir }}/bin/lx-amd64/" 
+  tasks:
+   - name: Create the update hostgroup file
+     copy: dest={{ sge_root_dir }}/hostgrp7_36 src=hostgrp7_36.j2
+     register: last_result
+       
+   - name: Add the new hostgroup to qconf
+     shell: chdir={{ sge_root_dir }} qconf -Ahgrp ./hostgrp7_36 
+     environment: "{{ sge_path }}"
+     when: last_result.changed 
+   
+   - name: Create the update queue file
+     copy: dest={{ sge_root_dir }}/que7_36 src=que7_36.j2
+     register: last_qresult
+       
+   - name: Add the new hostgroup to qconf
+     shell: chdir={{ sge_root_dir }} qconf -Aq ./que7_36 
+     environment: "{{ sge_path }}"
+     when: last_qresult.changed 
+
+
+- hosts: sge_slaves
+  tasks:
+   - name: get the curl version
+     shell: rpm -qa | grep ^curl- | cut -d. -f3
+     register: curl_ver
+   - name: check if qmaster is running
+     shell: ps -ef | grep qmaster | grep -v grep 1>/dev/null; echo $? 
+     register: qmaster
+   - group_by: key={{ curl_ver.stdout }}-{{ qmaster.stdout }}
+
+- hosts: 7-35-1
+  serial: 1
+  tasks:
+   - name: disable nagios alerts for this host 
+     nagios: action=downtime minutes=2 host={{ ansible_hostname }} services=sge_slaves
+     delegate_to: "{{ item }}"
+     with_items: groups.monitoring
+
+   - name: stop the execd service
+     shell: "{{ sge_root_dir }}/default/common/sgeexecd stop"
+   
+   - name: remove this host from old curl hostgoup
+     shell: su - sge -c "export SGE_ROOT={{ sge_root_dir }} ; {{ sge_root_dir }}/bin/lx-amd64/qconf -dattr hostgroup hostlist {{ inventory_hostname }} @curl7-35"
+
+   - name: update the curl package
+     yum: name=curl state=latest
+   
+   - name: Add ourselves to the  new hostgroup
+     shell: su - sge -c "export SGE_ROOT={{ sge_root_dir }} ;{{ sge_root_dir }}/bin/lx-amd64/qconf -aattr hostgroup hostlist {{ inventory_hostname }} @curl7-36"
+      
+   - local_action: pause seconds=30
+
+   - name: start the execd service
+     shell: su - sge -c "export SGE_ROOT={{ sge_root_dir }} ;{{ sge_root_dir }}/default/common/sgeexecd start"
+   
+#   - name: Enable nagios alerts for this host 
+#     nagios: action=enable_alerts host={{ ansible_hostname }} services=sge_slaves
+#     delegate_to: "{{ item }}"
+#     with_items: groups.monitoring

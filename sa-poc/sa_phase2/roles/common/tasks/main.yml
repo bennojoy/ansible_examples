@@ -1,0 +1,50 @@
+---
+# plays common across all servers
+
+- name: Copy the EPEL Repository.
+  copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
+
+- name: Create the GPG key for EPEL
+  copy: src=RPM-GPG-KEY-EPEL-6 dest=/etc/pki/rpm-gpg
+
+- name: Disable SELinux in conf file
+  lineinfile: dest=/etc/sysconfig/selinux regexp='^SELINUX=' line='SELINUX=disabled' state=present
+  register: last_result
+
+- name: Disable selinux dynamically
+  shell: setenforce 0
+  when: last_result.changed
+
+- name: create the hosts entry for all servers
+  template: src=hosts.j2 dest=/etc/hosts
+
+- name: install the common package
+  yum: name={{ item }} state=installed
+  with_items:
+   - numactl
+   - nrpe
+   - nagios-plugins-disk
+   - nagios-plugins-users
+   - nagios-plugins-procs
+   - nagios-plugins-swap
+   - nagios-plugins-load
+
+- name: copy cnf for nrpe
+  template: src=nrpe.cfg.j2 dest=/etc/nagios/nrpe.cfg
+
+- name: copy the nagios plugin for sge
+  template: src=check_sge.j2 dest=/usr/lib64/nagios/plugins/check_sge mode=755
+
+- name: start the nrpe service
+  service: name=nrpe state=started
+
+- name: create the user for sge operations
+  user: name=sge password=$1$SomeSalt$ri7Ew.qbiP9MECdvQ69Vg0 uid=200 generate_ssh_key=yes
+
+- name: Provide an authorized key for sge user
+  authorized_key: user={{ sge_user }} key="{{ lookup('file','~/.ssh/id_rsa.pub') }}" state=present
+
+- name: setup iptables rules
+  template: src=iptables.j2 dest=/etc/sysconfig/iptables
+  notify: restart iptables
+

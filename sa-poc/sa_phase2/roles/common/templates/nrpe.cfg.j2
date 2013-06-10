@@ -1,0 +1,26 @@
+log_facility=daemon
+pid_file=/var/run/nrpe/nrpe.pid
+
+server_port=5666
+nrpe_user=nrpe
+nrpe_group=nrpe
+allowed_hosts={{ hostvars[groups['monitoring'][0]].ansible_default_ipv4.address }}
+dont_blame_nrpe=0
+debug=1
+command_timeout=60
+connection_timeout=300
+include_dir=/etc/nrpe.d/
+
+command[check_users]=/usr/lib64/nagios/plugins/check_users -w 5 -c 10
+command[check_load]=/usr/lib64/nagios/plugins/check_load -w 15,10,5 -c 30,25,20
+command[check_disk]=/usr/lib64/nagios/plugins/check_disk -w 20% -c 10% -p /
+command[check_procs]=/usr/lib64/nagios/plugins/check_procs -w 150 -c 200
+command[check_swap]=/usr/lib64/nagios/plugins/check_swap -w 55000 -c 5048
+{% if 'sge_master' in group_names %} 
+command[check_sge_master]=/usr/lib64/nagios/plugins/check_sge -H {{ inventory_hostname }} -d qmaster
+{% endif %}
+{% if 'sge_slaves' in group_names %} 
+command[check_sge_slave]=/usr/lib64/nagios/plugins/check_sge -H {{ inventory_hostname }} -d execd
+{% endif %}
+
+

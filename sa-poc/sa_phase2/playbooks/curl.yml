@@ -1,0 +1,51 @@
+---
+- hosts: sge_master
+  user: sge
+  vars:
+    curl_version: "7-35"
+    sge_path:
+      SGE_ROOT: "{{ sge_root_dir }}"
+      PATH: "{{ sge_root_dir }}/bin/lx-amd64/"
+ 
+  tasks:
+    - name: Create the complex file
+      copy: dest={{ sge_root_dir }}/complex src=complex
+      register: last_result
+       
+    - name: Add the complex to qconf
+      shell: chdir={{ sge_root_dir }} qconf -Mc ./complex 
+      environment: "{{ sge_path }}"
+      when: last_result.changed
+
+- hosts: sge_slaves
+  user: root
+  tasks:
+   - name: get the curl version
+     shell: rpm -qa | grep ^curl- | cut -d. -f3
+     register: curl_ver
+   - group_by: key={{ curl_ver.stdout }}
+
+- hosts: sge_master
+  user: sge
+  vars:
+    sge_path:
+      SGE_ROOT: "{{ sge_root_dir }}"
+      PATH: "{{ sge_root_dir }}/bin/lx-amd64/"
+  tasks:
+   - name: create file for hostgroup creation
+     template: dest={{ sge_root_dir }}/hostgrp src=hostgrp.j2
+     register: last_result
+
+   - name: Add the hostgroup to qconf
+     shell: chdir={{ sge_root_dir }} qconf -Ahgrp ./hostgrp
+     environment: "{{ sge_path }}"
+     when: last_result.changed
+
+   - name: create file for queue creation
+     template: dest={{ sge_root_dir }}/curl7-35.q src=que.j2
+     register: last_qresult
+
+   - name: Add the queue to qconf
+     shell: chdir={{ sge_root_dir }} qconf -Aq ./curl7-35.q
+     environment: "{{ sge_path }}"
+     when: last_qresult.changed

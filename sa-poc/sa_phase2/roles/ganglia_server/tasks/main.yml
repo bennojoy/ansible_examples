@@ -1,0 +1,31 @@
+# this file defines behavior for the 'monitoring server' class of nodes
+
+- name: install $item
+  yum: pkg=$item state=installed
+  with_items:
+    - ganglia
+    - ganglia-gmetad
+    - ganglia-gmond
+
+- name: install ganglia-web
+  yum: pkg=ganglia-web state=installed
+  notify:
+     - restart httpd
+
+- name: configure gmetad
+  template: src=gmetad.conf dest=/etc/ganglia/gmetad.conf
+  notify:
+      - restart gmetad
+
+- name: configure ganglia.conf
+  template: src=ganglia.conf.j2 dest=/etc/httpd/conf.d/ganglia.conf
+  notify:
+      - restart httpd
+
+
+- service: name=$item state=running
+  with_items:
+      - httpd
+      - gmetad
+      - gmond
+
