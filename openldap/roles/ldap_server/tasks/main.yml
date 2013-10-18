@@ -1,62 +1,8 @@
 ---
 
-- name: install python selinux
-  yum: name=libselinux-python state=installed
+- include: redhat.yml
+  when: ansible_os_family == "RedHat"
 
-- name: copy the epel repo file
-  copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo mode=0755
+- include: ubuntu.yml
+  when: ansible_os_family == "Debian"
 
-- name: Template the iptables file
-  template: src=iptables.j2 dest=/etc/sysconfig/iptables
-  notify: restart iptables
-
-- name: disable selinux
-  selinux: state=disabled
-
-- name: Install the openldap Packages
-  yum: name={{ item }} state=installed
-  with_items:
-   - openldap-servers
-   - openldap-clients
-   
-- name: Delete the configuration directory
-  file: path=/etc/openldap/slapd.d state=absent
-
-- name: Copy the slapd.conf configuration file
-  template: src=slapd.conf.j2 dest=/etc/openldap/slapd.conf
-  notify: restart slapd
-
-- name: Create the directory for ldap database
-  file: path=/var/lib/ldap/{{ domain_name }}/ state=directory owner=ldap group=ldap
-  
-
-- name: copy the certificates
-  copy: src={{ item }} dest=/etc/openldap/certs/ owner=ldap group=ldap
-  with_fileglob: "*.pem"
-
-- name: copy the supporting files
-  copy: src=slapd dest=/etc/init.d/slapd mode=0755
-
-- name: copy the supporting files
-  copy: src=ldap dest=/etc/sysconfig/ldap mode=0755
-
-- name: start the slapd service
-  service: name=slapd state=started enabled=yes 
-
-- name: Install PHPLdapadmin
-  yum: name=phpldapadmin state=installed
-
-- name: copy the phpldapadmin supporting files
-  copy: src=phpldapadmin.conf dest=/etc/httpd/conf.d/phpldapadmin.conf
-  notify: restart httpd
-
-- name: copy the phpldapadmin supporting files
-  copy: src=config.php dest=/etc/phpldapadmin/config.php
-  notify: restart httpd
-
-- name: Copy the template for creating base dn
-  template: src=domain.ldif dest=/tmp
-
-- name: add the base domain
-  shell: ldapadd -x -D "cn=Manager,dc={{ domain_name.split('.')[0] }},dc={{ domain_name.split('.')[1] }}" -w passme -f /tmp/domain.ldif -h 127.0.0.1 && touch /opt/domain creates=/opt/domain
-   

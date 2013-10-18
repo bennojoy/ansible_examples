@@ -1,4 +1,5 @@
 ---
-- hosts: ldap_server
+- hosts: all
+  sudo: true
   roles:
    - role: ldap_server

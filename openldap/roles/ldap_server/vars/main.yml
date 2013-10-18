@@ -1,0 +1,15 @@
+---
+
+env:
+ RUNLEVEL: 1
+redhat_ldap_pkgs:
+  - openldap-servers
+  - openldap-clients
+  - libselinux-python
+  - openssl
+
+debian_ldap_pkgs:
+  - slapd
+  - ldap-utils
+  - python-selinux
+  - openssl
