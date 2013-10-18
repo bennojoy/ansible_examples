@@ -1,45 +1,259 @@
-# Default location of the slapd.conf file or slapd.d cn=config directory. If
-# empty, use the compiled-in default (/etc/ldap/slapd.d with a fallback to
-# /etc/ldap/slapd.conf).
-SLAPD_CONF=
+#!/bin/bash
+#
+# slapd   This shell script takes care of starting and stopping
+#         ldap servers (slapd).
+#
+# chkconfig: - 27 73
+# description: LDAP stands for Lightweight Directory Access Protocol, used \
+#              for implementing the industry standard directory services.
+# processname: slapd
+# config: /etc/openldap/slapd.conf
+# pidfile: /var/run/slapd.pid
 
-# System account to run the slapd server under. If empty the server
-# will run as root.
-SLAPD_USER="openldap"
+### BEGIN INIT INFO
+# Provides: slapd
+# Required-Start: $network $local_fs
+# Required-Stop: $network $local_fs 
+# Should-Start: 
+# Should-Stop: 
+# Default-Start: 
+# Default-Stop: 
+# Short-Description: starts and stopd OpenLDAP server daemon
+# Description: LDAP stands for Lightweight Directory Access Protocol, used
+#              for implementing the industry standard directory services.
+### END INIT INFO
 
-# System group to run the slapd server under. If empty the server will
-# run in the primary group of its user.
-SLAPD_GROUP="openldap"
+# Source function library.
+. /etc/init.d/functions
 
-# Path to the pid file of the slapd server. If not set the init.d script
-# will try to figure it out from $SLAPD_CONF (/etc/ldap/slapd.d by
-# default)
-SLAPD_PIDFILE=
+# Define default values of options allowed in /etc/sysconfig/ldap
+SLAPD_LDAP="yes"
+SLAPD_LDAPI="no"
+SLAPD_LDAPS="yes"
+SLAPD_URLS=""
+SLAPD_SHUTDOWN_TIMEOUT=3
+# OPTIONS, SLAPD_OPTIONS and KTB5_KTNAME are not defined
 
-# slapd normally serves ldap only on all TCP-ports 389. slapd can also
-# service requests on TCP-port 636 (ldaps) and requests via unix
-# sockets.
-# Example usage:
-# SLAPD_SERVICES="ldap://127.0.0.1:389/ ldaps:/// ldapi:///"
-SLAPD_SERVICES="ldaps:/// ldapi:///"
+# Source an auxiliary options file if we have one
+if [ -r /etc/sysconfig/ldap ] ; then
+	. /etc/sysconfig/ldap
+fi
 
-# If SLAPD_NO_START is set, the init script will not start or restart
-# slapd (but stop will still work).  Uncomment this if you are
-# starting slapd via some other means or if you don't want slapd normally
-# started at boot.
-#SLAPD_NO_START=1
+slapd=/usr/sbin/slapd
+slaptest=/usr/sbin/slaptest
+lockfile=/var/lock/subsys/slapd
+configdir=/etc/openldap/slapd.d/
+configfile=/etc/openldap/slapd.conf
+pidfile=/var/run/slapd.pid
+slapd_pidfile=/var/run/openldap/slapd.pid
 
-# If SLAPD_SENTINEL_FILE is set to path to a file and that file exists,
-# the init script will not start or restart slapd (but stop will still
-# work).  Use this for temporarily disabling startup of slapd (when doing
-# maintenance, for example, or through a configuration management system)
-# when you don't want to edit a configuration file.
-SLAPD_SENTINEL_FILE=/etc/ldap/noslapd
+RETVAL=0
 
-# For Kerberos authentication (via SASL), slapd by default uses the system
-# keytab file (/etc/krb5.keytab).  To use a different keytab file,
-# uncomment this line and change the path.
-#export KRB5_KTNAME=/etc/krb5.keytab
+#
+# Pass commands given in $2 and later to "test" run as user given in $1.
+#
+function testasuser() {
+	local user= cmd=
+	user="$1"
+	shift
+	cmd="$@"
+	if test x"$user" != x ; then
+		if test x"$cmd" != x ; then
+			/sbin/runuser -f -m -s /bin/sh -c "test $cmd" -- "$user"
+		else
+			false
+		fi
+	else
+		false
+	fi
+}
 
-# Additional options to pass to slapd
-SLAPD_OPTIONS=""
+#
+# Check for read-access errors for the user given in $1 for a service named $2.
+# If $3 is specified, the command is run if "klist" can't be found.
+#
+function checkkeytab() {
+	local user= service= klist= default=
+	user="$1"
+	service="$2"
+	default="${3:-false}"
+	if test -x /usr/kerberos/bin/klist ; then
+		klist=/usr/kerberos/bin/klist
+	elif test -x /usr/bin/klist ; then
+		klist=/usr/bin/klist
+	fi
+	KRB5_KTNAME="${KRB5_KTNAME:-/etc/krb5.keytab}"
+	export KRB5_KTNAME
+	if test -s "$KRB5_KTNAME" ; then
+		if test x"$klist" != x ; then
+			if LANG=C $klist -k "$KRB5_KTNAME" | tail -n 4 | awk '{print $2}' | grep -q ^"$service"/ ; then
+				if ! testasuser "$user" -r ${KRB5_KTNAME:-/etc/krb5.keytab} ; then
+					true
+				else
+					false
+				fi
+			else
+				false
+			fi
+		else
+			$default
+		fi
+	else
+		false
+	fi
+}
+
+function configtest() {
+	local user= ldapuid= dbdir= file=
+	# Check for simple-but-common errors.
+	user=ldap
+	prog=`basename ${slapd}`
+	ldapuid=`id -u $user`
+	# Unaccessible database files.
+	dbdirs=""
+	if [ -d $configdir ]; then
+		for configfile in `ls -1 $configdir/cn\=config/olcDatabase*.ldif`; do
+			dbdirs=$dbdirs"
+			"`LANG=C egrep '^olcDbDirectory[[:space:]]*:[[:space:]]+[[:print:]]+$' $configfile | sed 's,^olcDbDirectory: ,,'`
+		done
+	elif [ -f $configfile ]; then
+			dbdirs=`LANG=C egrep '^directory[[:space:]]+' $configfile | sed 's,^directory[[:space:]]*,,'`
+	else
+		exit 6
+	fi
+	for dbdir in $dbdirs; do
+		if [ ! -d $dbdir ]; then
+			exit 6
+		fi
+		for file in `find ${dbdir}/ -not -uid $ldapuid -and \( -name "*.dbb" -or -name "*.gdbm" -or -name "*.bdb" -or -name "__db.*" -or -name "log.*" -or -name alock \)` ; do
+			echo -n $"$file is not owned by \"$user\"" ; warning ; echo
+		done
+		if test -f "${dbdir}/DB_CONFIG"; then
+			if ! testasuser $user -r "${dbdir}/DB_CONFIG"; then
+				file=DB_CONFIG
+				echo -n $"$file is not readable by \"$user\"" ; warning ; echo
+			fi
+		fi
+	done
+	# Unaccessible keytab with an "ldap" key.
+	if checkkeytab $user ldap ; then
+		file=${KRB5_KTNAME:-/etc/krb5.keytab}
+		echo -n $"$file is not readable by \"$user\"" ; warning ; echo
+	fi
+	# Check the configuration file.
+	slaptestout=`/sbin/runuser -m -s "$slaptest" -- "$user" "-u" 2>&1`
+	slaptestexit=$?
+#	slaptestout=`echo $slaptestout 2>/dev/null | grep -v "config file testing succeeded"`
+	# print warning if slaptest passed but reports some problems
+	if test $slaptestexit == 0 ; then
+		if echo "$slaptestout" | grep -v "config file testing succeeded" >/dev/null ; then
+			echo -n $"Checking configuration files for $prog: " ; warning ; echo
+			echo "$slaptestout"
+		fi
+	fi
+	# report error if configuration file is wrong
+	if test $slaptestexit != 0 ; then
+		echo -n $"Checking configuration files for $prog: " ; failure ; echo
+		echo "$slaptestout"
+		if /sbin/runuser -m -s "$slaptest" -- "$user" "-u" > /dev/null 2> /dev/null ; then
+			#dirs=`LANG=C egrep '^directory[[:space:]]+[[:print:]]+$' $configfile | awk '{print $2}'`
+			for directory in $dbdirs ; do
+				if test -r $directory/__db.001 ; then
+					echo -n $"stale lock files may be present in $directory" ; warning ; echo
+				fi
+			done
+		fi
+		exit 6
+	fi
+}
+
+function start() {
+	[ -x $slapd ] || exit 5
+	[ `id -u` -eq 0 ] || exit 4
+	configtest
+	# Define a couple of local variables which we'll need. Maybe.
+	user=ldap
+	prog=`basename ${slapd}`
+	harg="$SLAPD_URLS"
+	if test x$SLAPD_LDAP = xyes ; then
+		harg="$harg ldap:///"
+	fi
+	if test x$SLAPD_LDAPS = xyes ; then
+		harg="$harg ldaps:///"
+	fi
+	if test x$SLAPD_LDAPI = xyes ; then
+		harg="$harg ldapi:///"
+	fi
+	# System resources limit.
+	if [ -n "$SLAPD_ULIMIT_SETTINGS" ]; then
+		ulimit="ulimit $SLAPD_ULIMIT_SETTINGS &>/dev/null;"
+	else
+		ulimit=""
+	fi
+	# Release reserverd port
+	[ -x /sbin/portrelease ] && /sbin/portrelease slapd &>/dev/null || :
+	# Start daemons.
+	echo -n $"Starting $prog: "
+	daemon --pidfile=$pidfile --check=$prog $ulimit ${slapd} -h "\"$harg\"" -u ${user} $OPTIONS $SLAPD_OPTIONS 
+	RETVAL=$?
+	if [ $RETVAL -eq 0 ]; then
+		touch $lockfile
+		ln $slapd_pidfile $pidfile
+	fi
+	echo
+	return $RETVAL
+}
+
+function stop() {
+	# Stop daemons.
+	prog=`basename ${slapd}`
+	[ `id -u` -eq 0 ] || exit 4
+	echo -n $"Stopping $prog: "
+
+	# This will remove pid and args files from /var/run/openldap
+	killproc -p $slapd_pidfile -d $SLAPD_SHUTDOWN_TIMEOUT ${slapd}
+	RETVAL=$?
+
+	# Now we want to remove lock file and hardlink of pid file
+	[ $RETVAL -eq 0 ] && rm -f $pidfile $lockfile
+	echo
+	return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+	configtest)
+		configtest
+		;;
+	start)
+		start
+		RETVAL=$?
+		;;
+	stop)
+		stop
+		RETVAL=$?
+		;;
+	status)
+		status -p $pidfile ${slapd}
+		RETVAL=$?
+		;;
+	restart|force-reload)
+		stop
+		start
+		RETVAL=$?
+		;;
+	condrestart|try-restart)
+		status -p $pidfile ${slapd} > /dev/null 2>&1 || exit 0
+		stop
+		start
+		;;
+	usage)
+		echo $"Usage: $0 {start|stop|restart|force-reload|status|condrestart|try-restart|configtest|usage}"
+		RETVAL=0
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart|force-reload|status|condrestart|try-restart|configtest|usage}"
+		RETVAL=2
+esac
+
+exit $RETVAL

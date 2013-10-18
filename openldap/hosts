@@ -1,3 +1,2 @@
-ec2-23-20-98-88.compute-1.amazonaws.com ansible_ssh_user=ubuntu
-ec2-54-226-142-25.compute-1.amazonaws.com ansible_ssh_user=ec2-user
-ec2-54-226-55-174.compute-1.amazonaws.com
+[ldap_server]
+192.168.2.50

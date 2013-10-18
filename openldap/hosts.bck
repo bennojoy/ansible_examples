@@ -1,3 +1,0 @@
-ec2-54-225-0-108.compute-1.amazonaws.com ansible_ssh_user=ubuntu
-ec2-54-242-114-150.compute-1.amazonaws.com ansible_ssh_user=ec2-user
-
