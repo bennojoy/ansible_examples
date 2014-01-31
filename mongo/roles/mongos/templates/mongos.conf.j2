@@ -1,0 +1,28 @@
+#where to log
+{% if ansible_os_family == "RedHat" %}
+logpath=/var/log/mongo/mongos.log
+{% endif %}
+{% if ansible_os_family == "Debian" %}
+logpath=/var/log/mongodb/mongos.log
+{% endif %}
+
+logappend=true
+
+# fork and run in background
+fork = true
+
+port = {{ mongos_port }}
+{% set hosts = '' %}
+ {% for host in mongoc_servers %}
+   {% if loop.last %}
+      {% set hosts = hosts + host + ':' ~ mongoc_port  %}
+       configdb = {{ hosts }}
+      {% else %}
+        {% set hosts = hosts + host + ':' ~ mongoc_port + ','  %}
+   {% endif %}
+ {% endfor %}
+
+# location of pidfile
+pidfilepath = {{ mongos_keyfile_dir_prefix }}/mongos.pid
+keyFile={{ mongos_keyfile_dir_prefix }}/secret
+chunkSize={{ mongos_chunk_size }}

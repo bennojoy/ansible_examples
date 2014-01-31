@@ -1,0 +1,10 @@
+---
+mongod_pkgs:
+   - mongo-10gen
+   - mongo-10gen-server
+   - bc
+   - python-pip
+   - pymongo
+mongo_user: mongod
+mongo_group: mongod
+

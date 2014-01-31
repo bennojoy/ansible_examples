@@ -1,0 +1,67 @@
+---
+#This Playbook configures the mongos service of mongodb
+
+- name: Add the OS specific varibles
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Install the libselinux module
+  yum: name=libselinux-python state=installed
+  when: ansible_os_family == "RedHat"
+
+- name: Create the repository for 10Gen
+  copy: src=10gen.repo dest=/etc/yum.repos.d/10gen.repo
+  when: ansible_os_family == "RedHat"
+
+- name: Create the EPEL Repository.
+  copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
+  when: ansible_os_family == "RedHat"
+
+- name: Install the apt key for ubuntu
+  apt_key: id=7F0CEB10 url="http://docs.mongodb.org/10gen-gpg-key.asc"
+  when: ansible_os_family == "Debian"
+
+- name: Install the python pycurl library
+  apt: name=python-pycurl state=installed update_cache=yes
+  when: ansible_os_family == "Debian"
+
+- name: Install the repository for Ubuntu mongodb
+  apt_repository: repo="deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen" state=present
+  when: ansible_os_family == "Debian"
+
+- name: Create the mongod user
+  user: name={{ mongo_user }} comment="MongoD"
+
+- name: make sure the hostname is available in /etc/hosts
+  lineinfile: dest=/etc/hosts regexp="{{ ansible_hostname }}" line="{{ hostvars[inventory_hostname].ansible_default_ipv4.address + " " + ansible_hostname }}" state=present
+
+- name: Install the mongodb package
+  yum: name={{ item }} state=installed
+  with_items: mongod_pkgs
+  when: ansible_os_family == "RedHat"
+
+- name: Install the mongodb package
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items: mongod_pkgs
+  when: ansible_os_family == "Debian"
+
+- name: Create the mongos startup file
+  template: src=mongos.j2 dest=/etc/init.d/mongos mode=0655
+  when: ansible_os_family == "RedHat"
+
+- name: Create the mongodb startup file for Debian
+  template: src=mongos_debian_init.j2 dest=/etc/init/mongos.conf mode=0655
+  when: ansible_os_family == "Debian"
+
+- name: Create the mongos configuration file
+  template: src=mongos.conf.j2 dest=/etc/mongos.conf
+
+- name: Copy the keyfile for authentication
+  copy: src=secret dest={{ mongos_keyfile_dir_prefix }}/secret owner={{ mongo_user }} group={{ mongo_group }} mode=0400
+
+- name: Start the mongos service
+  command: creates=/var/lock/subsys/mongos /etc/init.d/mongos start
+  when: ansible_os_family == "RedHat"
+
+- name: Start the mongos service for Ubuntu variants
+  service: name=mongos state=started
+  when: ansible_os_family == "Debian"

@@ -1,0 +1,14 @@
+---
+# This Playbook would deploy the whole mongodb cluster with replication and sharding.
+
+- hosts: all
+  roles:
+  - role: mongo_shard
+    mongo_shard_list:
+     - replset_name: 2701
+       hostname: vm2
+       port: 2701
+    mongos_port: 2900
+    mongoc_admin_pass: foobar
+
+

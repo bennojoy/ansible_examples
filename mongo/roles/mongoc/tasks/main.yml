@@ -1,0 +1,92 @@
+---
+# This playbook  deploys the mongodb configurationdb  servers
+
+- name: Add the OS specific varibles
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Install the libselinux module
+  yum: name=libselinux-python state=installed
+  when: ansible_os_family == "RedHat"
+
+- name: Create the repository for 10Gen
+  copy: src=10gen.repo dest=/etc/yum.repos.d/10gen.repo
+  when: ansible_os_family == "RedHat"
+
+- name: Create the EPEL Repository.
+  copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
+  when: ansible_os_family == "RedHat"
+
+- name: Install the apt key for ubuntu
+  apt_key: id=7F0CEB10 url="http://docs.mongodb.org/10gen-gpg-key.asc"
+  when: ansible_os_family == "Debian"
+
+- name: Install the python pycurl library
+  apt: name=python-pycurl state=installed update_cache=yes
+  when: ansible_os_family == "Debian"
+
+- name: Install the repository for Ubuntu mongodb
+  apt_repository: repo="deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen" state=present
+  when: ansible_os_family == "Debian"
+
+- name: Create the mongod user
+  user: name={{ mongo_user }} comment="MongoD"
+
+- name: make sure the hostname is available in /etc/hosts
+  lineinfile: dest=/etc/hosts regexp="{{ ansible_hostname }}" line="{{ hostvars[inventory_hostname].ansible_default_ipv4.address + " " + ansible_hostname }}" state=present
+
+- name: Install the mongodb package
+  yum: name={{ item }} state=installed
+  with_items: mongod_pkgs
+  when: ansible_os_family == "RedHat"
+
+- name: Install the mongodb package
+  apt: name={{ item }} state=installed update_cache=yes
+  with_items: mongod_pkgs
+  when: ansible_os_family == "Debian"
+
+- name: create data directory for mongodb
+  file: path={{ mongoc_datadir_prefix }} state=directory owner={{ mongo_user }} group={{ mongo_group }}
+
+- name: Create data directory for mongoc configuration server
+  file: path={{ mongoc_datadir_prefix }}/configdb state=directory owner={{ mongo_user }} group={{ mongo_group }}
+
+- name: Create the mongo configuration server startup file
+  template: src=mongoc.j2 dest=/etc/init.d/mongoc mode=0655
+  when: ansible_os_family == "RedHat"
+
+- name: Create the mongodb startup file for Debian
+  template: src=mongoc_debian_init.j2 dest=/etc/init/mongoc.conf mode=0655
+  when: ansible_os_family == "Debian"
+
+- name: Create the mongo configuration server file
+  template: src=mongoc.conf.j2 dest=/etc/mongoc.conf
+
+- name: Copy the keyfile for authentication
+  copy: src=roles/mongod/files/secret dest={{ mongoc_datadir_prefix }}/secret owner={{ mongo_user }} group={{ mongo_group }} mode=0400
+
+- name: Start the mongo configuration server service
+  command: creates=/var/lock/subsys/mongoc /etc/init.d/mongoc start
+  when: ansible_os_family == "RedHat"
+
+- name: Start the mongoc service for Ubuntu variants
+  service: name=mongoc state=started
+  when: ansible_os_family == "Debian"
+
+- name: pause
+  pause: seconds=40
+
+- name: add the admin user
+  mongodb_user: database=admin name=admin password={{ mongoc_admin_pass }} login_port={{ mongoc_port }} state=present
+  when: ansible_os_family == "RedHat"
+  ignore_errors: yes
+
+- name: add the admin user itemplate Ubuntu
+  template: src=add_user.j2 dest={{ mongoc_datadir_prefix }}/add_user.js owner={{ mongo_user }} group={{ mongo_group }}
+  when: ansible_os_family == "Debian"
+  register: useradd
+
+- name: add the admin user
+  shell: /usr/bin/mongo localhost:{{ mongoc_port }}/admin {{ mongoc_datadir_prefix }}/add_user.js
+  when: useradd|changed
+
+ 

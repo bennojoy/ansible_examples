@@ -1,0 +1,8 @@
+---
+
+# The global variable file mongodb installation
+mongos_keyfile_dir_prefix: "/data"
+mongos_port: 2900
+mongoc_port: 2800
+mongoc_servers: [vm1, vm2]
+mongos_chunk_size: 1

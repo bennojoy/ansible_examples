@@ -1,0 +1,12 @@
+---
+
+# The global variable file mongodb installation
+
+mongod_smallfiles: "true"
+mongos_chunk_size: 1
+mongod_datadir_prefix: /data/
+mongod_iface: '{{ ansible_default_ipv4.interface }}'
+mongod_port: 2700
+mongod_replication: false
+mongod_repl_servers: []
+mongod_repl_master: "localhost"

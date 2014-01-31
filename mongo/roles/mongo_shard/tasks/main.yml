@@ -1,0 +1,7 @@
+---
+- name: Create the file to initialize the mongod shard set
+  template: src=shard_init.j2 dest=/tmp/shard_init.js
+
+
+- name: Add the shard to the mongos
+  shell: /usr/bin/mongo localhost:{{ mongos_port }}/admin -u admin -p {{ mongoc_admin_pass }} /tmp/shard_init.js

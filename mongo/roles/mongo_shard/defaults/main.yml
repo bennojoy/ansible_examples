@@ -1,0 +1,12 @@
+---
+
+mongo_shard_list:
+ - replset_name: foo
+   hostname: bar
+   port: 2801
+ - replset_name: foo1
+   hostname: bar1
+   port: 2801
+
+mongos_port: 2900
+mongoc_admin_pass: foobar

@@ -1,0 +1,13 @@
+---
+# This Playbook would deploy the whole mongodb cluster with replication and sharding.
+
+- hosts: all
+  roles:
+  - role: mongos
+    mongos_keyfile_dir_prefix: "/data"
+    mongos_port: 2900
+    mongoc_port: 2800
+    mongoc_servers: [ubuntu13]
+    mongos_chunk_size: 1
+
+

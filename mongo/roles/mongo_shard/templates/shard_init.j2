@@ -1,0 +1,9 @@
+{% for i in mongo_shard_list %}
+{% if i.replset_name is defined %}
+sh.addShard("{{ i.replset_name }}/{{ i.hostname }}:{{ i.port }}")
+{% endif %}
+{% if i.replset_name is not defined %}
+sh.addShard("{{ i.hostname }}:{{ i.port }}")
+{% endif %}
+{% endfor %}
+printjson(rs.status())

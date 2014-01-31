@@ -1,0 +1,7 @@
+---
+
+# The global variable file mongodb installation
+
+mongoc_datadir_prefix: /data/
+mongoc_port: 2800
+mongoc_admin_pass: "foobar"
