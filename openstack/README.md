@@ -238,7 +238,7 @@ Note: if your external network is not a valid network, this download of image fr
 
 We can verify the image status by checking the "images" tab in Horizon.
 
-![Alt text](/images/os_images.png "Images")
+![Alt text](/openstack/images/os_images.png "Images")
 
 
 
@@ -259,14 +259,14 @@ The following command shows how to create a tenant and a private network. The fo
 
 The status of the tenant and the network can be verified from Horizon. The tenant list would be available in "projects tab"
 
-![Alt text](/images/os_projects.png "projects")
+![Alt text](/openstack/images/os_projects.png "projects")
 
 
 
 
 The network topology would be visible in the "project-> Network Topology" tab.
 
-![Alt text](/images/os_networks.png "networks")
+![Alt text](/openstack/images/os_networks.png "networks")
 
 
 
@@ -291,7 +291,7 @@ To create a vm for a tenant we could issue the following command. The command cr
 
 Once created the vm can be verified by going to the "instances" tab in Horizon"
 
-![Alt text](/images/os_instances.png "Instances")
+![Alt text](/openstack/images/os_instances.png "Instances")
 
 
 
@@ -299,7 +299,7 @@ Once created the vm can be verified by going to the "instances" tab in Horizon"
 
 We can also get the console of the VM from the Horizon UI by clicking on the "console" drop down menu.
 
-![Alt text](/images/os_vnc.png "console")
+![Alt text](/openstack/images/os_vnc.png "console")
 
 
 
