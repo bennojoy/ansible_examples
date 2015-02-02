@@ -8,7 +8,7 @@
 ### A Primer into OpenStack Architecture
 -----------------------------------------
 
-![Alt text](/images/openstack/os_architecture.png "Arch")
+![Alt text](/openstack/images/os_architecture.png "Arch")
 
 As the above diagram depicts, there are several key components that make up the OpenStack Cloud Infrastructure. A brief description about the services are as follows:
 
