@@ -44,7 +44,7 @@ As the above diagram depicts, there are several key components that make up the 
 ###Ansible's Example Deployment Diagram
 -----------------------------------------
 
-![Alt text](/images/os_dep_diagram.png "diagram")
+![Alt text](/openstack/images/os_dep_diagram.png "diagram")
 
 As the above diagram shows Ansible playbooks which deploy's OpenStack combines all the management processes into a single node (controller node) and the compute service into the other nodes(Compute Nodes). 
 
@@ -73,7 +73,7 @@ The Playbooks also configure's the Compute node's with the following components.
 ###Physical Network deployment diagram      
 ---------------------------------------
 
-![Alt text](/images/os_phy_network.png "phy_net")
+![Alt text](/openstack/images/os_phy_network.png "phy_net")
 
 The diagram in Fig 1.a shows a typical openstack production network setup which consists of four networks. A management network for management of the servers. A data network which would have all the inter vm  traffic flowing through it, an external network which would faciliate the flow of network traffic destined to an outside network, This network/interface would be attached to the network controller. The fourth network is the api network, which would be used by the endusers to access the api's for cloud operations.
 
@@ -82,7 +82,7 @@ For the sake of simplicity the ansible example deployment simplifies the network
 ###Logical Network deployment diagram
 --------------------------------------
 
-![Alt text](/images/os_log_network.png "log_network")
+![Alt text](/openstack/images/os_log_network.png "log_network")
 
 Openstack provides several logical network deployment options like flat networks, provider router with private networks, tenant routers with private networks. The above diagram shows the network deployment carried out by the ansible playbooks, which is reffered to as provider router with private networks.
 
@@ -92,7 +92,7 @@ As it can be seen above all the tenants would get thier own private networks whi
 ###Network under the Hood
 ------------------------------
 
-![Alt text](/images/os_network_detailed.png "Detailed network")
+![Alt text](/openstack/images/os_network_detailed.png "Detailed network")
 
 As described previousely the Ansible example playbooks deploys Openstack with a network topology of  "Provider Router with private networks for tenants". The above diagram give's a brief on the data flow in this network toplogy.
 
