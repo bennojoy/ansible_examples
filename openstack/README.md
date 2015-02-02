@@ -218,7 +218,7 @@ Run the playbook to deploy the OpenStack Cloud:
 
 Once the playbooks complete you can check the deployment by logging into the Horizon console http://<controller-ip>/dashboard. The credentials for login would be as defined in groupvars/all. The state of all services can be verified by checking the "system info" tab.
 
-![Alt text](/images/os_sysinfo.png "sysinfo")
+![Alt text](/openstack/images/os_sysinfo.png "sysinfo")
 
 ###Uploading Image to OpenStack
 ----------------------------------------
