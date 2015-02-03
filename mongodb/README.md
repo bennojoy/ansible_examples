@@ -7,7 +7,7 @@
 ###A Primer into the MongoDB NoSQL database.
 ---------------------------------------------
 
-![Alt text](/images/nosql_primer.png "Primer NoSQL")
+![Alt text](/mongodb/images/nosql_primer.png "Primer NoSQL")
 
 The above diagram shows how the MongoDB nosql differs from the traditional
 relational database model. In RDBMS the data of a user is stored in table and
@@ -33,7 +33,7 @@ less requirement for ACID.
 ### MongoDB's Data replication .
 ------------------------------------
 
-![Alt text](/images/replica_set.png "Replica Set")
+![Alt text](/mongodb/images/replica_set.png "Replica Set")
 
 
 Data backup is achieved in Mongodb via Replica sets. As the figure above show's
@@ -48,7 +48,7 @@ recommended number of slave servers are 3.
 ### MongoDB's Sharding (Horizontal Scaling) .
 ------------------------------------------------
 
-![Alt text](/images/sharding.png "Sharding")
+![Alt text](/mongodb/images/sharding.png "Sharding")
 
 Sharding allows to achieve a very high performing database, by partioning the
 data into seperate chunks and allocating diffent ranges of chunks to diffrent
@@ -81,7 +81,7 @@ collection is split and balanced across shards.
 ### Deploy the Cluster.
 ----------------------------
 
-![Alt text](/images/site.png "Site")
+![Alt text](/mongodb/images/site.png "Site")
   
 The above diagram illustrates the deployment model for mongodb cluster via
 Ansible, This deployment models focuses on deploying a three shard servers,
@@ -198,7 +198,7 @@ the status of the Shards.
 ###We can also make sure the Sharding works by creating a database,collection and populate it with documents and check if the chunks of the collection are balanced equally across nodes. The below diagram illustrates the verification step.
 -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-![Alt text](/images/check.png "check")
+![Alt text](/mongodb/images/check.png "check")
 
 The above mentioned steps can be tested with an automated playbook.
 
@@ -235,7 +235,7 @@ the number of chunks spread across the shards.
 ### Scaling the Cluster
 ---------------------------------------
 
-![Alt text](/images/scale.png "scale")
+![Alt text](/mongodb/images/scale.png "scale")
 
 To add a new node to the configured MongoDb Cluster, setup the inventory file as follows:
 
