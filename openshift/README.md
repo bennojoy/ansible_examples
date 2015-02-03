@@ -29,7 +29,7 @@ store various user/app details, it also uses ActiveMQ for communincating with di
 
 ### An Overview of application creation process in OpenShift.
  
-![Alt text](/images/app_deploy.png "App")
+![Alt text](/openshift/images/app_deploy.png "App")
 
 
 The above figure depicts an overview of diffrent steps invovled in creating an application in OpenShift. So if a developer wants to create or deploy a JBoss & Myql application the user can request the same from diffrent client tools that are available, the choice can be an Eclipse IDE or command line tool (rhc) or even a web browser.
@@ -39,7 +39,7 @@ Once the user has instructed the client it makes a web service request to the Br
 
 ### Deployment Diagram of OpenShift via Ansible.
  
-![Alt text](/images/arch.png "App")
+![Alt text](/openshift/images/arch.png "App")
 
 As the above diagram shows the Ansible playbooks deploys a highly available Openshift Paas environment. The deployment has two servers running lvs (piranha) for loadbalancing and ha for the brokers. Two instances of brokers also run for fault tolerence. Ansible also configures a dns server which provides name resolution for all the new apps created in the Openshift environment.
 
@@ -153,7 +153,7 @@ Once the stack has been succesfully deployed, we can check if the diffrent compo
         http://ec2-54-226-116-175.compute-1.amazonaws.com:8161/admin/network.jsp
 
 
-![Alt text](/images/mq.png "App")
+![Alt text](/openshift/images/mq.png "App")
 
 - Broker: To check if the broker node is installed/configured succesfully, issue the following command on any broker node and a similar output should be displayed. Make sure there is a PASS at the end.
 
