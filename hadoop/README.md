@@ -22,7 +22,7 @@ Lets have a closer look at each of these components.
 
 ## HDFS
 
-![Alt text](/images/hdfs.png "HDFS")
+![Alt text](/hadoop/images/hdfs.png "HDFS")
 
 The above diagram illustrates a hdfs filesystem, The cluster consists of three DataNodes who are responsible for storing/replicating data, while the NameNode is a process which is responsible for storing the metadata for the entire Filesystem.
 As the example illustrates above when a client wants to write a file to the HDFS cluster it first contacts the namenode and let's it know that it want to write a file. The namenode then decides where and how the file should be saved and notifies the client about it's decision.
@@ -57,7 +57,7 @@ Once the map and reduce jobs is ready the client would instruct the "JobTracker"
 Let have closer look at the anotomy of a Map Job.
     
 
-![Alt text](/images/map.png "Map job")
+![Alt text](/hadoop/images/map.png "Map job")
 
 As the Figure above shows when the client instructs the jobtracker to run a job on File1, the jobtracker first contacts the namenode to determine where the blocks of the File1 are, Then the jobtracker sends down the map jobs jar file down to the nodes having the blocks and the tasktracker process in those nodes run those jar/java files.
 In the above example datanode1 and datanode2 had the blocks so the tasktrackers on those nodes run the map jobs, Once the jobs are completed the two nodes would have  key,value results as below:
@@ -76,14 +76,14 @@ MapJob Results:
 Once the Map Phase is completed the jobtracker process initiates the Shuffle and Reduce process.
 Let's have closer look at the shuffle-reduce job.
 
-![Alt text](/images/reduce.png "Reduce job")
+![Alt text](/hadoop/images/reduce.png "Reduce job")
 
 As the figure above demostrates the first thing that jobtracker does is that it spawns a reducer job on the datanode/tasktracker nodes for each "key" in the job results. In this case we have three keys "black,white,sheep" in our results, so three reducers are spawned one for each key and the map jobs shuffles/ or give out thier keys to the respective reduce jobs who owns that key. Then as per the reduce jobs code the sum is calculated and the result is written into the HDFS filesystem in a common directory. In the above example the output directory is specified as "/home/ben/oputput" so all the reducers will write thier results into this directory under diffrent files, the file names being "part-00xx", where x being the reducer/partition number.
 
 ## Hadoop Deployment. 
 
 
-![Alt text](/images/hadoop.png "Reduce job")
+![Alt text](/hadoop/images/hadoop.png "Reduce job")
 
 The above diagram depicts a typical hadoop deployment, the namenode and jobtracker usually resides on the same node, though it can on seperate node. The datanodes and tasktrackers run on the same node. The size of the cluster can be scaled to thousands of node with petabytes of storage.
 The above deployment model provides redundancy for data as the hdfs filesytem takes care of the data replication, The only single point of failure are the NameNode and the TaskTracker. If any of these components fail the cluster wont be usable.
@@ -98,7 +98,7 @@ This syncroniztion of the primary and secondary namenode metadata is handled by 
 ###Quorum Journal Manager.
 
 
-![Alt text](/images/qjm.png "QJM")
+![Alt text](/hadoop/images/qjm.png "QJM")
 
 As the figure above shows the Quorum Journal manager consists of the journal manager client and journal manager nodes. The journal manager clients resides on the same node as the namenodes, and in case of primary collects all the edits logs happening on the namenode and sends it out to the Journal nodes. The journal manager client residing on the secondary namenode regurlary contacts the journal nodes and updates it's local metadata to be consistant with the master node. Incase of primary node failure the the seconday namenode updates itself to the lastest edit logs and takes over as the primary namenode.
 
@@ -108,7 +108,7 @@ Apart from the data consistentcy, a distrubuted/cluster system would also need m
 
 Zookeeper provides Hadoop with a mechanism to co-ordinate with each other.
 
-![Alt text](/images/zookeeper.png "Zookeeper")
+![Alt text](/hadoop/images/zookeeper.png "Zookeeper")
 
 As the figure above shows the the zookeeper services are a client server based service, The server service itself is replicated over a set of machines that comprise the service, in short HA is built inbuilt for Zookeeper servers.
 
@@ -119,7 +119,7 @@ If the zkfc client detects a failure of the namenode/jobtracker it removes itsel
 
 ## Hadoop HA Deployment.
 
-![Alt text](/images/hadoopha.png "Hadoop_HA")
+![Alt text](/hadoop/images/hadoopha.png "Hadoop_HA")
 
 The above diagram depicts a fully HA Hadoop Cluster with no single point of Failure and automated failover.
 
